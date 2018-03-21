@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	dockertypes "github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
 	"github.com/stretchr/testify/assert"
 
 	runtimeapi "k8s.io/kubernetes/pkg/kubelet/apis/cri/runtime/v1alpha2"
@@ -67,5 +68,65 @@ func TestConvertToPullableImageID(t *testing.T) {
 	for _, test := range testCases {
 		actual := toPullableImageID(test.id, test.image)
 		assert.Equal(t, test.expected, actual)
+	}
+}
+
+func TestImageInspectToRuntimeAPIImage_ImageLabels(t *testing.T) {
+	testCases := []struct {
+		id       string
+		image    *dockertypes.ImageInspect
+		expected map[string]string
+	}{
+		{
+			id: "image labels are copied from the image config to the runtime API image",
+			image: &dockertypes.ImageInspect{
+				Config: &container.Config{
+					Labels: map[string]string{
+						"key": "value",
+					},
+				},
+			},
+			expected: map[string]string{
+				"key": "value",
+			},
+		},
+	}
+
+	for _, test := range testCases {
+		actual, err := imageInspectToRuntimeAPIImage(test.image)
+		if err != nil {
+			t.Errorf("[%s] unexpected error %T %v", test.id, err, err)
+			continue
+		}
+		assert.Equal(t, test.expected, actual.ImageLabels)
+	}
+}
+
+func TestImageToRuntimeAPIImage_ImageLabels(t *testing.T) {
+	testCases := []struct {
+		id       string
+		image    *dockertypes.ImageSummary
+		expected map[string]string
+	}{
+		{
+			id: "image labels are copied from the image summary to the runtime API image",
+			image: &dockertypes.ImageSummary{
+				Labels: map[string]string{
+					"key": "value",
+				},
+			},
+			expected: map[string]string{
+				"key": "value",
+			},
+		},
+	}
+
+	for _, test := range testCases {
+		actual, err := imageToRuntimeAPIImage(test.image)
+		if err != nil {
+			t.Errorf("[%s] unexpected error %T %v", test.id, err, err)
+			continue
+		}
+		assert.Equal(t, test.expected, actual.ImageLabels)
 	}
 }

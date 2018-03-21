@@ -1421,6 +1421,7 @@ func (kl *Kubelet) convertToAPIContainerStatuses(pod *v1.Pod, podStatus *kubecon
 			RestartCount: int32(cs.RestartCount),
 			Image:        cs.Image,
 			ImageID:      cs.ImageID,
+			ImageLabels:  cs.ImageLabels,
 			ContainerID:  cid,
 		}
 		switch cs.State {

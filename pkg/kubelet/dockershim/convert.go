@@ -41,6 +41,7 @@ func imageToRuntimeAPIImage(image *dockertypes.ImageSummary) (*runtimeapi.Image,
 		RepoTags:    image.RepoTags,
 		RepoDigests: image.RepoDigests,
 		Size_:       size,
+		ImageLabels: image.Labels,
 	}, nil
 }
 
@@ -55,6 +56,7 @@ func imageInspectToRuntimeAPIImage(image *dockertypes.ImageInspect) (*runtimeapi
 		RepoTags:    image.RepoTags,
 		RepoDigests: image.RepoDigests,
 		Size_:       size,
+		ImageLabels: image.Config.Labels,
 	}
 
 	uid, username := getUserFromImageUser(image.Config.User)

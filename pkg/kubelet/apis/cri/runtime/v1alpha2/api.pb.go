@@ -2801,6 +2801,8 @@ type Image struct {
 	// User name that will run the command(s). This is used if UID is not set
 	// and no user is specified when creating container.
 	Username string `protobuf:"bytes,6,opt,name=username,proto3" json:"username,omitempty"`
+	// Labels that were assigned to the image when it was built.
+	ImageLabels map[string]string `protobuf:"bytes,7,rep,name=image_labels,json=imageLabels" json:"image_labels,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 
 func (m *Image) Reset()                    { *m = Image{} }

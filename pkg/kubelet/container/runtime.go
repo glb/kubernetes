@@ -332,6 +332,8 @@ type ContainerStatus struct {
 	Image string
 	// ID of the image.
 	ImageID string
+	// Image labels
+	ImageLabels map[string]string
 	// Hash of the container, used for comparison.
 	Hash uint64
 	// Number of times that the container has been restarted.

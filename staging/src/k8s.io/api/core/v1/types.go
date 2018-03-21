@@ -2206,6 +2206,9 @@ type ContainerStatus struct {
 	// Container's ID in the format 'docker://<container_id>'.
 	// +optional
 	ContainerID string `json:"containerID,omitempty" protobuf:"bytes,8,opt,name=containerID"`
+	// Image labels
+	// +optional
+	ImageLabels map[string]string `json:"imageLabels,omitempty" protobuf:"bytes,9,opt,name=imageLabels"`
 }
 
 // PodPhase is a label for the condition of a pod at the current time.

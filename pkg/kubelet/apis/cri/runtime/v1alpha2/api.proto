@@ -987,6 +987,8 @@ message Image {
     // User name that will run the command(s). This is used if UID is not set
     // and no user is specified when creating container.
     string username = 6;
+    // Labels that were assigned to the image when it was built.
+    map<string, string> image_labels = 7;
 }
 
 message ListImagesResponse {
