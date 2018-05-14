@@ -952,6 +952,13 @@ func (in *ContainerStatus) DeepCopyInto(out *ContainerStatus) {
 	*out = *in
 	in.State.DeepCopyInto(&out.State)
 	in.LastTerminationState.DeepCopyInto(&out.LastTerminationState)
+	if in.ImageLabels != nil {
+		in, out := &in.ImageLabels, &out.ImageLabels
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
 	return
 }
 

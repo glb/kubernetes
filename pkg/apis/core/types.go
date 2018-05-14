@@ -1998,6 +1998,8 @@ type ContainerStatus struct {
 	ImageID      string
 	// +optional
 	ContainerID string
+	// +optional
+	ImageLabels map[string]string
 }
 
 // PodPhase is a label for the condition of a pod at the current time.

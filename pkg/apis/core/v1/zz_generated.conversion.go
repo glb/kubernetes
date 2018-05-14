@@ -1270,6 +1270,7 @@ func autoConvert_v1_ContainerStatus_To_core_ContainerStatus(in *v1.ContainerStat
 	out.Image = in.Image
 	out.ImageID = in.ImageID
 	out.ContainerID = in.ContainerID
+	out.ImageLabels = *(*map[string]string)(unsafe.Pointer(&in.ImageLabels))
 	return nil
 }
 
@@ -1291,6 +1292,7 @@ func autoConvert_core_ContainerStatus_To_v1_ContainerStatus(in *core.ContainerSt
 	out.Image = in.Image
 	out.ImageID = in.ImageID
 	out.ContainerID = in.ContainerID
+	out.ImageLabels = *(*map[string]string)(unsafe.Pointer(&in.ImageLabels))
 	return nil
 }
 

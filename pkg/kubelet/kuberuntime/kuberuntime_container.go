@@ -433,7 +433,7 @@ func toKubeContainerStatus(status *runtimeapi.ContainerStatus, runtimeName strin
 		Name:         labeledInfo.ContainerName,
 		Image:        status.Image.Image,
 		ImageID:      status.ImageRef,
-		ImageLabels:  status.Image.Labels,
+		ImageLabels:  status.Annotations,
 		Hash:         annotatedInfo.Hash,
 		RestartCount: annotatedInfo.RestartCount,
 		State:        toKubeContainerState(status.State),
