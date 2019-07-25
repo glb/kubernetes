@@ -21,6 +21,7 @@ package emptydir
 import (
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 
 	"k8s.io/api/core/v1"
@@ -437,5 +438,118 @@ func TestGetHugePagesMountOptions(t *testing.T) {
 		} else if testCase.expectedResult != value {
 			t.Errorf("Unexpected mountOptions for Pod. Expected %v, got %v", testCase.expectedResult, value)
 		}
+	}
+}
+
+func Test_EmptyDirMountOptions(t *testing.T) {
+	tcs := []struct {
+		name            string
+		podspec         v1.PodSpec
+		spec            *v1.EmptyDirVolumeSource
+		expectedOptions []string
+	}{
+		{
+			name: "original behaviour for medium=Memory",
+			spec: &v1.EmptyDirVolumeSource{
+				Medium: v1.StorageMediumMemory,
+			},
+			expectedOptions: []string{},
+		},
+		{
+			name: "passes mount options for medium=Memory",
+			spec: &v1.EmptyDirVolumeSource{
+				Medium:       v1.StorageMediumMemory,
+				MountOptions: []string{"noexec", "nosuid", "nodev"},
+			},
+			expectedOptions: []string{"noexec", "nosuid", "nodev"},
+		},
+		{
+			name: "original behaviour for medium=HugePages",
+			spec: &v1.EmptyDirVolumeSource{
+				Medium: v1.StorageMediumHugePages,
+			},
+			podspec: v1.PodSpec{
+				Containers: []v1.Container{
+					v1.Container{
+						Resources: v1.ResourceRequirements{
+							Requests: v1.ResourceList{
+								v1.ResourceName("hugepages-2Mi"): resource.MustParse("100Mi"),
+							},
+						},
+					},
+				},
+			},
+			expectedOptions: []string{"pagesize=2Mi"},
+		},
+		{
+			name: "passes mount options for medium=HugePages",
+			spec: &v1.EmptyDirVolumeSource{
+				Medium:       v1.StorageMediumHugePages,
+				MountOptions: []string{"noexec", "nosuid", "nodev"},
+			},
+			podspec: v1.PodSpec{
+				Containers: []v1.Container{
+					v1.Container{
+						Resources: v1.ResourceRequirements{
+							Requests: v1.ResourceList{
+								v1.ResourceName("hugepages-2Mi"): resource.MustParse("100Mi"),
+							},
+						},
+					},
+				},
+			},
+			expectedOptions: []string{"pagesize=2Mi", "noexec", "nosuid", "nodev"},
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			mountPoint, err := utiltesting.MkTmpdir("emptydirMountOptionsTestMountPoint")
+			if err != nil {
+				t.Fatalf("can't make a temp dir: %v", err)
+			}
+			defer os.RemoveAll(mountPoint)
+
+			tmpDir, err := utiltesting.MkTmpdir("emptydirMountOptionsTest")
+			if err != nil {
+				t.Fatalf("can't make a temp dir: %v", err)
+			}
+			defer os.RemoveAll(tmpDir)
+
+			plug := makePluginUnderTest(t, "kubernetes.io/empty-dir", tmpDir)
+
+			physicalMounter := mount.FakeMounter{}
+
+			mounter, err := plug.(*emptyDirPlugin).newMounterInternal(&volume.Spec{
+				Volume: &v1.Volume{
+					VolumeSource: v1.VolumeSource{
+						EmptyDir: tc.spec,
+					},
+				},
+			},
+				&v1.Pod{Spec: tc.podspec},
+				&physicalMounter,
+				&fakeMountDetector{},
+				volume.VolumeOptions{})
+			if err != nil {
+				t.Errorf("Failed to make a new Mounter: %v", err)
+			}
+			if mounter == nil {
+				t.Errorf("Got a nil Mounter")
+			}
+
+			err = mounter.(*emptyDir).SetUpAt(mountPoint, volume.MounterArgs{})
+			if err != nil {
+				t.Errorf("Failed to set up emptyDir: %v", err)
+			}
+
+			if len(physicalMounter.Log) != 1 {
+				t.Fatalf("Expected log to have one record, had %d: %#v", len(physicalMounter.Log), physicalMounter.Log)
+			}
+
+			if !reflect.DeepEqual(tc.expectedOptions, physicalMounter.Log[0].Options) {
+				t.Errorf("Expected options to be %#v but was %#v", tc.expectedOptions, physicalMounter.Log[0].Options)
+			}
+		})
 	}
 }

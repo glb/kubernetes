@@ -113,14 +113,18 @@ func (plugin *emptyDirPlugin) NewMounter(spec *volume.Spec, pod *v1.Pod, opts vo
 func (plugin *emptyDirPlugin) newMounterInternal(spec *volume.Spec, pod *v1.Pod, mounter mount.Interface, mountDetector mountDetector, opts volume.VolumeOptions) (volume.Mounter, error) {
 	medium := v1.StorageMediumDefault
 
+	var mountOptions []string
+
 	if spec.Volume.EmptyDir != nil { // Support a non-specified source as EmptyDir.
 		medium = spec.Volume.EmptyDir.Medium
+		mountOptions = spec.Volume.EmptyDir.MountOptions
 	}
 
 	return &emptyDir{
 		pod:             pod,
 		volName:         spec.Name(),
 		medium:          medium,
+		mountOptions:    mountOptions,
 		mounter:         mounter,
 		mountDetector:   mountDetector,
 		plugin:          plugin,
@@ -171,6 +175,7 @@ type mountDetector interface {
 type emptyDir struct {
 	pod           *v1.Pod
 	volName       string
+	mountOptions  []string
 	medium        v1.StorageMedium
 	mounter       mount.Interface
 	mountDetector mountDetector
@@ -276,7 +281,7 @@ func (ed *emptyDir) setupTmpfs(dir string) error {
 	}
 
 	klog.V(3).Infof("pod %v: mounting tmpfs for volume %v", ed.pod.UID, ed.volName)
-	return ed.mounter.Mount("tmpfs", dir, "tmpfs", nil /* options */)
+	return ed.mounter.Mount("tmpfs", dir, "tmpfs", ed.mountOptions)
 }
 
 // setupHugepages creates a hugepage mount at the specified directory.
@@ -304,7 +309,7 @@ func (ed *emptyDir) setupHugepages(dir string) error {
 	}
 
 	klog.V(3).Infof("pod %v: mounting hugepages for volume %v", ed.pod.UID, ed.volName)
-	return ed.mounter.Mount("nodev", dir, "hugetlbfs", []string{pageSizeMountOption})
+	return ed.mounter.Mount("nodev", dir, "hugetlbfs", append([]string{pageSizeMountOption}, ed.mountOptions...))
 }
 
 // getPageSizeMountOptionFromPod retrieves pageSize mount option from Pod's resources
