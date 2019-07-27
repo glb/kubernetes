@@ -44,10 +44,11 @@ const FakeActionUnmount = "unmount"
 
 // FakeAction objects are logged every time a fake mount or unmount is called.
 type FakeAction struct {
-	Action string // "mount" or "unmount"
-	Target string // applies to both mount and unmount actions
-	Source string // applies only to "mount" actions
-	FSType string // applies only to "mount" actions
+	Action  string   // "mount" or "unmount"
+	Target  string   // applies to both mount and unmount actions
+	Source  string   // applies only to "mount" actions
+	FSType  string   // applies only to "mount" actions
+	Options []string // applies only to "mount" actions
 }
 
 func (f *FakeMounter) ResetLog() {
@@ -95,7 +96,7 @@ func (f *FakeMounter) Mount(source string, target string, fstype string, options
 	}
 	f.MountPoints = append(f.MountPoints, MountPoint{Device: source, Path: absTarget, Type: fstype, Opts: opts})
 	klog.V(5).Infof("Fake mounter: mounted %s to %s", source, absTarget)
-	f.Log = append(f.Log, FakeAction{Action: FakeActionMount, Target: absTarget, Source: source, FSType: fstype})
+	f.Log = append(f.Log, FakeAction{Action: FakeActionMount, Target: absTarget, Source: source, FSType: fstype, Options: opts})
 	return nil
 }
 
